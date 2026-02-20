@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Local Bistro – Menu & Reservation</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Lora:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --wine: #6b1527; --wine-dark: #4a0e1c; --wine-light: #8c2a3e;
+      --cream: #faf6f0; --cream-dark: #f0e8da;
+      --gold: #c5944a; --gold-light: #d4ac6e;
+      --charcoal: #2a2a2a; --text: #3d3232; --text-light: #7a6b6b; --white: #ffffff;
+      --font-display: 'Playfair Display', Georgia, serif;
+      --font-body: 'Lora', Georgia, serif;
+      --shadow-card: 0 4px 24px rgba(0,0,0,0.06);
+      --shadow-elevated: 0 12px 40px rgba(0,0,0,0.12);
+      --radius: 8px;
+      --transition: 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { font-family: var(--font-body); color: var(--text); background: var(--cream); line-height: 1.6; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+    a { color: var(--wine); text-decoration: none; transition: color var(--transition); }
+    a:hover { color: var(--gold); }
+    .container { max-width: 980px; margin: 0 auto; padding: 0 1.5rem; }
+    .reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.7s ease, transform 0.7s ease; }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    .top-bar { position: fixed; top: 0; left: 0; right: 0; z-index: 900; background: rgba(250,246,240,0.92); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid rgba(107,21,39,0.08); transition: box-shadow var(--transition); }
+    .top-bar.scrolled { box-shadow: 0 2px 20px rgba(0,0,0,0.08); }
+    .top-bar-inner { max-width: 980px; margin: 0 auto; padding: 0 1.5rem; display: flex; align-items: center; justify-content: space-between; height: 64px; }
+    .top-bar .logo { font-family: var(--font-display); font-size: 1.35rem; font-weight: 700; color: var(--wine); }
+    .top-bar .logo span { color: var(--gold); font-weight: 400; }
+    .top-bar nav { display: flex; align-items: center; gap: 2rem; }
+    .top-bar nav a { font-size: 0.88rem; font-weight: 500; color: var(--text); letter-spacing: 0.06em; text-transform: uppercase; position: relative; padding-bottom: 2px; }
+    .top-bar nav a::after { content: ''; position: absolute; bottom: -2px; left: 0; width: 0; height: 1.5px; background: var(--gold); transition: width var(--transition); }
+    .top-bar nav a:hover { color: var(--wine); }
+    .top-bar nav a:hover::after { width: 100%; }
+    .nav-reserve-btn { background: var(--wine); color: var(--cream) !important; padding: 0.5rem 1.2rem; border-radius: 6px; font-size: 0.82rem !important; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; border: none; font-family: var(--font-body); font-weight: 600; transition: background var(--transition), transform var(--transition); }
+    .nav-reserve-btn:hover { background: var(--wine-light); transform: translateY(-1px); }
+    .nav-reserve-btn::after { display: none !important; }
+    .hamburger { display: none; background: none; border: none; cursor: pointer; width: 28px; height: 20px; position: relative; }
+    .hamburger span { display: block; position: absolute; left: 0; right: 0; height: 2px; background: var(--charcoal); border-radius: 2px; transition: all 0.3s; }
+    .hamburger span:nth-child(1) { top: 0; } .hamburger span:nth-child(2) { top: 9px; } .hamburger span:nth-child(3) { top: 18px; }
+
+    .hero { margin-top: 64px; position: relative; height: 70vh; min-height: 480px; display: flex; align-items: center; justify-content: center; text-align: center; overflow: hidden; background: radial-gradient(ellipse at 20% 80%, rgba(107,21,39,0.15) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, rgba(197,148,74,0.12) 0%, transparent 50%), linear-gradient(170deg, var(--cream) 0%, var(--cream-dark) 40%, #e8d5c0 100%); }
+    .hero::before { content: ''; position: absolute; inset: 0; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E"); background-size: 200px; pointer-events: none; }
+    .hero::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--gold-light), transparent); }
+    .hero-content { position: relative; z-index: 2; animation: heroFadeIn 1.2s ease both; }
+    @keyframes heroFadeIn { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+    .hero-tagline { font-size: 0.82rem; letter-spacing: 0.28em; text-transform: uppercase; color: var(--gold); margin-bottom: 1rem; font-weight: 500; }
+    .hero h1 { font-family: var(--font-display); font-size: clamp(2.8rem, 6vw, 4.5rem); font-weight: 700; color: var(--wine); line-height: 1.1; margin-bottom: 0.6rem; }
+    .hero h1 em { font-style: italic; font-weight: 400; color: var(--gold); }
+    .hero-sub { font-size: 1.1rem; color: var(--text-light); font-style: italic; max-width: 420px; margin: 0 auto 2rem; }
+    .hero-cta { display: inline-flex; align-items: center; gap: 0.5rem; background: var(--wine); color: var(--cream); padding: 0.85rem 2rem; border-radius: 6px; font-family: var(--font-body); font-size: 0.9rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; border: none; cursor: pointer; transition: all var(--transition); }
+    .hero-cta:hover { background: var(--wine-light); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(107,21,39,0.2); color: var(--cream); }
+    .hero-cta svg { transition: transform var(--transition); }
+    .hero-cta:hover svg { transform: translateX(3px); }
+    .scroll-hint { position: absolute; bottom: 2rem; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 0.4rem; color: var(--text-light); font-size: 0.72rem; letter-spacing: 0.15em; text-transform: uppercase; animation: gentleBounce 2.5s ease-in-out infinite; opacity: 0.6; }
+    @keyframes gentleBounce { 0%, 100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(6px); } }
+
+    .section { padding: 5rem 0; }
+    .section-header { text-align: center; margin-bottom: 3rem; }
+    .section-header .overline { font-size: 0.78rem; letter-spacing: 0.25em; text-transform: uppercase; color: var(--gold); font-weight: 500; margin-bottom: 0.5rem; }
+    .section-header h2 { font-family: var(--font-display); font-size: clamp(1.8rem, 4vw, 2.6rem); color: var(--wine); font-weight: 600; }
+    .section-header .divider { width: 50px; height: 2px; background: linear-gradient(90deg, var(--gold-light), var(--wine-light)); margin: 0.8rem auto 0; border-radius: 2px; }
+
+    .menu-section { background: radial-gradient(ellipse at 0% 0%, rgba(197,148,74,0.04) 0%, transparent 50%), var(--cream); }
+    .menu-tabs { display: flex; justify-content: center; gap: 0.5rem; margin-bottom: 2.5rem; flex-wrap: wrap; }
+    .menu-tab { background: transparent; border: 1.5px solid rgba(107,21,39,0.15); color: var(--text-light); padding: 0.55rem 1.4rem; border-radius: 30px; font-family: var(--font-body); font-size: 0.85rem; font-weight: 500; cursor: pointer; transition: all var(--transition); }
+    .menu-tab:hover { border-color: var(--wine-light); color: var(--wine); }
+    .menu-tab.active { background: var(--wine); border-color: var(--wine); color: var(--cream); }
+    .menu-category { display: none; }
+    .menu-category.active { display: block; animation: fadeSlideIn 0.45s ease both; }
+    @keyframes fadeSlideIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+    .menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 1.2rem; max-width: 860px; margin: 0 auto; }
+    .menu-card { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; padding: 1.3rem 1.5rem; background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow-card); border: 1px solid rgba(0,0,0,0.03); transition: all var(--transition); position: relative; overflow: hidden; }
+    .menu-card::before { content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%; background: linear-gradient(180deg, var(--gold-light), var(--wine-light)); opacity: 0; transition: opacity var(--transition); }
+    .menu-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-elevated); }
+    .menu-card:hover::before { opacity: 1; }
+    .menu-card-info { flex: 1; }
+    .menu-card-info h4 { font-family: var(--font-display); font-size: 1.1rem; font-weight: 600; color: var(--charcoal); margin-bottom: 0.3rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+    .menu-card-info p { font-size: 0.9rem; color: var(--text-light); line-height: 1.5; margin-bottom: 0.4rem; }
+    .menu-card .price { font-family: var(--font-display); font-size: 1.15rem; font-weight: 600; color: var(--wine); white-space: nowrap; }
+    .badge { display: inline-flex; font-family: var(--font-body); font-size: 0.65rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; padding: 0.2rem 0.55rem; border-radius: 20px; line-height: 1; }
+    .badge-chef { background: linear-gradient(135deg, #fdf3e0, #f9e4b8); color: #8a6914; }
+    .badge-popular { background: linear-gradient(135deg, #fde8ec, #f5c6d0); color: var(--wine); }
+    .badge-new { background: linear-gradient(135deg, #e0f2e9, #b8e0ca); color: #1a6b3d; }
+    .dietary-tags { display: flex; gap: 0.4rem; margin-top: 0.2rem; }
+    .dietary { font-size: 0.68rem; font-weight: 600; padding: 0.15rem 0.45rem; border-radius: 4px; letter-spacing: 0.04em; text-transform: uppercase; }
+    .dietary-v { background: #e8f5e9; color: #2e7d32; }
+    .dietary-gf { background: #fff3e0; color: #e65100; }
+    .dietary-df { background: #e3f2fd; color: #1565c0; }
+
+    .about-section { background: var(--white); position: relative; }
+    .about-section::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(197,148,74,0.3), transparent); }
+    .about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; max-width: 860px; margin: 0 auto; }
+    .about-visual { position: relative; height: 360px; border-radius: var(--radius); overflow: hidden; background: radial-gradient(ellipse at 30% 70%, rgba(107,21,39,0.12) 0%, transparent 60%), radial-gradient(ellipse at 70% 30%, rgba(197,148,74,0.1) 0%, transparent 60%), linear-gradient(135deg, var(--cream-dark), #ddc9a8); }
+    .about-visual-text { position: absolute; bottom: 1.5rem; left: 1.5rem; font-family: var(--font-display); font-size: 5rem; font-weight: 700; color: rgba(107,21,39,0.08); line-height: 1; }
+    .about-visual .year { position: absolute; top: 1.5rem; right: 1.5rem; font-family: var(--font-display); font-size: 0.8rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); font-weight: 600; }
+    .about-text h3 { font-family: var(--font-display); font-size: 1.6rem; color: var(--wine); margin-bottom: 1rem; }
+    .about-text p { color: var(--text-light); font-size: 0.95rem; line-height: 1.75; margin-bottom: 1rem; }
+    .about-text .signature { font-family: var(--font-display); font-style: italic; color: var(--wine-light); font-size: 1rem; }
+
+    .info-section { background: radial-gradient(ellipse at 80% 80%, rgba(107,21,39,0.06) 0%, transparent 50%), var(--cream); }
+    .info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; max-width: 860px; margin: 0 auto; }
+    .info-card { background: var(--white); padding: 2rem 1.5rem; border-radius: var(--radius); box-shadow: var(--shadow-card); text-align: center; transition: all var(--transition); border: 1px solid rgba(0,0,0,0.03); }
+    .info-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-elevated); }
+    .info-card .icon { width: 48px; height: 48px; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, rgba(107,21,39,0.08), rgba(197,148,74,0.08)); border-radius: 50%; color: var(--wine); }
+    .info-card h4 { font-family: var(--font-display); font-size: 1.1rem; color: var(--wine); margin-bottom: 0.75rem; }
+    .info-card p { font-size: 0.9rem; color: var(--text-light); line-height: 1.6; }
+    .info-card p strong { color: var(--text); font-weight: 600; }
+
+    .cta-banner { background: linear-gradient(135deg, var(--wine-dark), var(--wine), var(--wine-light)); padding: 4rem 0; text-align: center; position: relative; overflow: hidden; }
+    .cta-banner::before { content: ''; position: absolute; inset: 0; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E"); background-size: 200px; pointer-events: none; }
+    .cta-banner h2 { font-family: var(--font-display); font-size: clamp(1.6rem, 3.5vw, 2.2rem); color: var(--cream); font-weight: 600; margin-bottom: 0.5rem; position: relative; }
+    .cta-banner p { color: rgba(250,246,240,0.7); font-size: 1rem; margin-bottom: 1.5rem; font-style: italic; position: relative; }
+    .cta-banner .hero-cta { background: var(--gold); color: var(--wine-dark); position: relative; }
+    .cta-banner .hero-cta:hover { background: var(--gold-light); box-shadow: 0 8px 24px rgba(0,0,0,0.25); }
+
+    footer { background: var(--charcoal); color: rgba(255,255,255,0.5); padding: 3rem 0 2rem; }
+    .footer-inner { max-width: 860px; margin: 0 auto; padding: 0 1.5rem; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 2rem; }
+    .footer-brand .logo { font-family: var(--font-display); font-size: 1.3rem; font-weight: 700; color: var(--cream); margin-bottom: 0.5rem; }
+    .footer-brand .logo span { color: var(--gold); font-weight: 400; }
+    .footer-brand p { font-size: 0.85rem; line-height: 1.6; max-width: 280px; }
+    .footer-links h5 { font-family: var(--font-display); color: var(--cream); font-size: 0.9rem; margin-bottom: 0.75rem; }
+    .footer-links a { display: block; color: rgba(255,255,255,0.5); font-size: 0.85rem; margin-bottom: 0.4rem; transition: color var(--transition); }
+    .footer-links a:hover { color: var(--gold); }
+    .footer-social { display: flex; gap: 0.8rem; margin-top: 0.5rem; }
+    .footer-social a { width: 36px; height: 36px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,0.5); transition: all var(--transition); }
+    .footer-social a:hover { border-color: var(--gold); color: var(--gold); transform: translateY(-2px); }
+    .footer-bottom { max-width: 860px; margin: 2rem auto 0; padding: 1.5rem 1.5rem 0; border-top: 1px solid rgba(255,255,255,0.08); text-align: center; font-size: 0.78rem; }
+
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(42,42,42,0.6); backdrop-filter: blur(4px); z-index: 2000; align-items: center; justify-content: center; }
+    .modal-overlay.active { display: flex; animation: modalBgIn 0.3s ease both; }
+    @keyframes modalBgIn { from { opacity: 0; } to { opacity: 1; } }
+    .modal-box { background: var(--white); width: 92%; max-width: 460px; border-radius: 12px; box-shadow: var(--shadow-elevated); overflow: hidden; animation: modalSlideIn 0.4s ease both; max-height: 90vh; overflow-y: auto; }
+    @keyframes modalSlideIn { from { opacity: 0; transform: translateY(30px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    .modal-header { background: linear-gradient(135deg, var(--wine-dark), var(--wine)); padding: 1.5rem 2rem; position: relative; }
+    .modal-header h2 { font-family: var(--font-display); color: var(--cream); font-size: 1.4rem; }
+    .modal-header p { color: rgba(250,246,240,0.6); font-size: 0.85rem; font-style: italic; margin-top: 0.2rem; }
+    .modal-close { position: absolute; top: 1rem; right: 1rem; background: rgba(255,255,255,0.1); border: none; color: var(--cream); width: 32px; height: 32px; border-radius: 50%; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background var(--transition); }
+    .modal-close:hover { background: rgba(255,255,255,0.2); }
+    .modal-body { padding: 1.5rem 2rem 2rem; }
+    .field { margin-bottom: 1.1rem; }
+    .field label { display: block; font-size: 0.82rem; font-weight: 600; color: var(--text); margin-bottom: 0.35rem; }
+    .field input, .field select, .field textarea { width: 100%; padding: 0.65rem 0.85rem; border: 1.5px solid #ddd; border-radius: 6px; font-family: var(--font-body); font-size: 0.92rem; color: var(--text); background: var(--cream); transition: border-color var(--transition), box-shadow var(--transition); outline: none; }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--wine-light); box-shadow: 0 0 0 3px rgba(107,21,39,0.08); }
+    .field textarea { resize: vertical; min-height: 70px; }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 0.6rem; margin-top: 0.5rem; }
+    .btn { padding: 0.65rem 1.4rem; border-radius: 6px; border: none; font-family: var(--font-body); font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all var(--transition); }
+    .btn-secondary { background: transparent; color: var(--text-light); border: 1.5px solid #ddd; }
+    .btn-secondary:hover { border-color: #bbb; color: var(--text); }
+    .btn-primary { background: var(--wine); color: var(--cream); }
+    .btn-primary:hover { background: var(--wine-light); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(107,21,39,0.2); }
+    .modal-success { display: none; text-align: center; padding: 3rem 2rem; }
+    .modal-success.active { display: block; }
+    .modal-success .check { width: 64px; height: 64px; margin: 0 auto 1.2rem; border-radius: 50%; background: linear-gradient(135deg, #e8f5e9, #c8e6c9); display: flex; align-items: center; justify-content: center; color: #2e7d32; animation: popIn 0.5s ease both; }
+    @keyframes popIn { 0% { transform: scale(0); } 60% { transform: scale(1.15); } 100% { transform: scale(1); } }
+    .modal-success h3 { font-family: var(--font-display); font-size: 1.4rem; color: var(--wine); margin-bottom: 0.5rem; }
+    .modal-success p { color: var(--text-light); font-size: 0.92rem; line-height: 1.6; }
+    .modal-success .btn { margin-top: 1.5rem; }
+
+    .back-to-top { position: fixed; bottom: 2rem; right: 2rem; width: 44px; height: 44px; border-radius: 50%; background: var(--wine); color: var(--cream); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 16px rgba(107,21,39,0.25); opacity: 0; transform: translateY(10px); transition: all var(--transition); z-index: 800; pointer-events: none; }
+    .back-to-top.visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
+    .back-to-top:hover { background: var(--wine-light); transform: translateY(-2px); }
+
+    @media (max-width: 768px) {
+      .top-bar nav { display: none; }
+      .hamburger { display: block; }
+      .top-bar nav.mobile-open { display: flex; flex-direction: column; position: absolute; top: 64px; left: 0; right: 0; background: rgba(250,246,240,0.98); backdrop-filter: blur(16px); padding: 1.5rem; gap: 1rem; border-bottom: 1px solid rgba(0,0,0,0.06); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
+      .hero { height: 55vh; min-height: 380px; }
+      .about-grid { grid-template-columns: 1fr; gap: 2rem; }
+      .about-visual { height: 240px; }
+      .info-grid { grid-template-columns: 1fr; }
+      .menu-grid { grid-template-columns: 1fr; }
+      .footer-inner { flex-direction: column; text-align: center; }
+      .footer-brand p { max-width: 100%; }
+      .footer-social { justify-content: center; }
+      .field-row { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 480px) { .hero h1 { font-size: 2.2rem; } .menu-tab { padding: 0.45rem 1rem; font-size: 0.8rem; } }
+  </style>
+</head>
+<body>
+  <div class="top-bar" id="topBar">
+    <div class="top-bar-inner">
+      <div class="logo">Local <span>Bistro</span></div>
+      <nav id="mainNav">
+        <a href="#menu-section">Menu</a>
+        <a href="#about">Our Story</a>
+        <a href="#info">Visit</a>
+        <button class="nav-reserve-btn" data-open-modal>Reserve</button>
+      </nav>
+      <button class="hamburger" id="hamburger" aria-label="Toggle menu"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+
+  <section class="hero">
+    <div class="hero-content">
+      <div class="hero-tagline">Est. 2018 &middot; Farm to Table</div>
+      <h1>Authentic Flavors,<br><em>Local Ingredients</em></h1>
+      <p class="hero-sub">A seasonal menu crafted from the finest local produce, served in a warm and welcoming space.</p>
+      <button class="hero-cta" data-open-modal>Reserve Your Table <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+    </div>
+    <div class="scroll-hint"><span>Explore</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></div>
+  </section>
+
+  <section class="section menu-section" id="menu-section">
+    <div class="container">
+      <div class="section-header reveal"><div class="overline">Our Offerings</div><h2>The Menu</h2><div class="divider"></div></div>
+      <div class="menu-tabs reveal">
+        <button class="menu-tab active" data-cat="starters">Starters</button>
+        <button class="menu-tab" data-cat="mains">Mains</button>
+        <button class="menu-tab" data-cat="desserts">Desserts</button>
+        <button class="menu-tab" data-cat="drinks">Drinks</button>
+      </div>
+      <div class="menu-category active" id="cat-starters"><div class="menu-grid">
+        <div class="menu-card"><div class="menu-card-info"><h4>Bruschetta <span class="badge badge-popular">Popular</span></h4><p>Grilled sourdough topped with heirloom tomato, fresh basil, roasted garlic and extra-virgin olive oil.</p><div class="dietary-tags"><span class="dietary dietary-v">V</span><span class="dietary dietary-df">DF</span></div></div><div class="price">$8.99</div></div>
+        <div class="menu-card"><div class="menu-card-info"><h4>Stuffed Mushrooms</h4><p>Portobello caps filled with herbed goat cheese, breadcrumbs and a drizzle of truffle oil.</p><div class="dietary-tags"><span class="dietary dietary-v">V</span></div></div><div class="price">$9.49</div></div>
+        <div class="menu-card"><div class="menu-card-info"><h4>Burrata Salad <span class="badge badge-new">New</span></h4><p>Creamy burrata over arugula with roasted beets, candied walnuts and aged balsamic.</p><div class="dietary-tags"><span class="dietary dietary-v">V</span><span class="dietary dietary-gf">GF</span></div></div><div class="price">$12.49</div></div>
+        <div class="menu-card"><div class="menu-card-info"><h4>Soup du Jour</h4><p>Ask your server about today's seasonal creation, made fresh every morning.</p><div class="dietary-tags"><span class="dietary dietary-gf">GF</span></div></div><div class="price">$7.50</div></div>
+      </div></div>
+      <div class="menu-category" id="cat-mains"><div class="menu-grid">
+        <div class="menu-card"><div class="menu-card-info"><h4>Grilled Salmon <span class="badge badge-chef">&#9733; Chef's Pick</span></h4><p>Fresh Atlantic salmon, lemon butter sauce, roasted asparagus and wild rice pilaf.</p><div class="dietary-tags"><span class="dietary dietary-gf">GF</span></div></div><div class="price">$18.99</div></div>
+        <div class="menu-card"><div class="menu-card-info"><h4>Steak Frites <span class="badge badge-popular">Popular</span></h4><p>7 oz grass-fed ribeye, garlic herb fries, peppercorn sauce and seasonal greens.</p><div class="dietary-tags"><span class="dietary dietary-gf">GF</span></div></div><div class="price">$22.49</div></div>
+        <div class="menu-card"><div class="menu-card-info"><h4>Wild Mushroom Risotto</h4><p>Arborio rice slow-cooked with porcini, shiitake and a finish of Parmigiano Reggiano.</p><div class="dietary-tags"><span class="dietary dietary-v">V</span><span class="dietary dietary-gf">GF</span></div></div><div class="price">$16.99</div></div>
+        <div class="menu-card"><div class="menu-card-info"><h4>Pan-Roasted Chicken <span class="badge badge-new">New</span></h4><p>Free-range half chicken, roasted root vegetables, jus and crispy herb gremolata.</p><div class="dietary-tags"><span class="dietary dietary-gf">GF</span><span class="dietary dietary-df">DF</span></div></div><div class="price">$19.49</div></div>
+      </div></div>
+      <div class="menu-category" id="cat-desserts"><div class="menu-grid">
+        <div class="menu-card"><div class="menu-card-info"><h4>Chocolate Lava Cake <span class="badge badge-chef">&#9733; Chef's Pick</span></h4><p>Warm Valrhona chocolate cake with a molten center, served with house-made vanilla bean ice cream.</p></div><div class="price">$7.79</div></div>
+        <div class="menu-card"><div class="menu-card-info"><h4>Lemon Sorbet</h4><p>Refreshing Meyer lemon sorbet with fresh mint and a lavender shortbread crumble.</p><div class="dietary-tags"><span class="dietary dietary-v">V</span><span class="dietary dietary-gf">GF</span><span class="dietary dietary-df">DF</span></div></div><div class="price">$5.99</div></div>
+        <div class="menu-card"><div class="menu-card-info"><h4>Cr&egrave;me Br&ucirc;l&eacute;e</h4><p>Classic vanilla custard with a caramelized sugar crust and seasonal berry garnish.</p><div class="dietary-tags"><span class="dietary dietary-gf">GF</span></div></div><div class="price">$8.49</div></div>
+      </div></div>
+      <div class="menu-category" id="cat-drinks"><div class="menu-grid">
+        <div class="menu-card"><div class="menu-card-info"><h4>House Red Wine <span class="badge badge-popular">Popular</span></h4><p>Aromatic 2019 Cabernet Sauvignon with notes of dark cherry and cedar. Napa Valley.</p></div><div class="price">$12 <small style="font-size:.7em;color:var(--text-light)">/glass</small></div></div>
+        <div class="menu-card"><div class="menu-card-info"><h4>House White Wine</h4><p>Crisp 2021 Sauvignon Blanc with citrus and stone fruit notes. Sonoma Coast.</p></div><div class="price">$11 <small style="font-size:.7em;color:var(--text-light)">/glass</small></div></div>
+        <div class="menu-card"><div class="menu-card-info"><h4>Espresso Martini <span class="badge badge-new">New</span></h4><p>Freshly pulled espresso, vodka, coffee liqueur and vanilla — shaken to a silky froth.</p></div><div class="price">$14.00</div></div>
+        <div class="menu-card"><div class="menu-card-info"><h4>Sparkling Water</h4><p>Chilled and effervescent, with a choice of lemon or cucumber.</p></div><div class="price">$3.50</div></div>
+      </div></div>
+    </div>
+  </section>
+
+  <section class="section about-section" id="about">
+    <div class="container"><div class="about-grid">
+      <div class="about-visual reveal"><div class="about-visual-text">LB</div><div class="year">Since 2018</div></div>
+      <div class="about-text reveal">
+        <h3>Our Story</h3>
+        <p>Local Bistro was born from a simple belief: the best meals start with the best ingredients, sourced from the farms and waters closest to our kitchen door.</p>
+        <p>Every season, our chef reimagines the menu to showcase what's fresh, partnering with local growers and artisans to bring honest, soulful food to your table.</p>
+        <p>Whether it's a weeknight dinner, a celebration, or a quiet glass of wine at the bar — we're glad you're here.</p>
+        <div class="signature">— Chef Margaux &amp; the LB team</div>
+      </div>
+    </div></div>
+  </section>
+
+  <section class="section info-section" id="info">
+    <div class="container">
+      <div class="section-header reveal"><div class="overline">Plan Your Visit</div><h2>Find Us</h2><div class="divider"></div></div>
+      <div class="info-grid reveal">
+        <div class="info-card"><div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div><h4>Hours</h4><p><strong>Mon – Thu</strong><br>5:00 PM – 10:00 PM</p><p style="margin-top:.4rem"><strong>Fri – Sat</strong><br>5:00 PM – 11:00 PM</p><p style="margin-top:.4rem"><strong>Sunday</strong><br>Brunch 10 AM – 2 PM<br>Dinner 5 PM – 9 PM</p></div>
+        <div class="info-card"><div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div><h4>Location</h4><p>142 Elm Street<br>Downtown District<br>Maplewood, CA 94110</p><p style="margin-top:.6rem;font-size:.82rem">Valet parking available<br>Fri &amp; Sat evenings</p></div>
+        <div class="info-card"><div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div><h4>Contact</h4><p><strong>Phone</strong><br>(415) 555-0142</p><p style="margin-top:.4rem"><strong>Email</strong><br>hello@localbistro.com</p><p style="margin-top:.4rem;font-size:.82rem">Private events &amp;<br>large party inquiries welcome</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-banner">
+    <div class="container">
+      <h2>Ready to Join Us?</h2>
+      <p>Secure your table in seconds — walk-ins welcome too.</p>
+      <button class="hero-cta" data-open-modal>Make a Reservation <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
+    </div>
+  </section>
+
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <div class="logo">Local <span>Bistro</span></div>
+        <p>Honest food, thoughtfully prepared. Proud to serve our community since 2018.</p>
+        <div class="footer-social">
+          <a href="#" aria-label="Instagram"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg></a>
+          <a href="#" aria-label="Facebook"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg></a>
+          <a href="#" aria-label="Twitter"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l11.733 16h4.267l-11.733-16h-4.267z"/><path d="M4 20l6.768-6.768m2.46-2.46l6.772-6.772"/></svg></a>
+        </div>
+      </div>
+      <div class="footer-links"><h5>Quick Links</h5><a href="#menu-section">Menu</a><a href="#about">Our Story</a><a href="#info">Hours &amp; Location</a><a href="#" data-open-modal>Reservations</a></div>
+      <div class="footer-links"><h5>Policies</h5><a href="#">Gift Cards</a><a href="#">Allergen Info</a><a href="#">Privacy Policy</a><a href="#">Careers</a></div>
+    </div>
+    <div class="footer-bottom"><p>&copy; 2025 Local Bistro. All rights reserved.</p></div>
+  </footer>
+
+  <div class="modal-overlay" id="reserveModal">
+    <div class="modal-box">
+      <div class="modal-header"><h2>Reserve a Table</h2><p>We'll confirm your booking within the hour.</p><button class="modal-close" id="modalClose" aria-label="Close">&times;</button></div>
+      <div class="modal-body" id="modalForm">
+        <form id="reservationForm">
+          <div class="field"><label for="res-name">Full Name</label><input type="text" id="res-name" placeholder="e.g. Jane Doe" required></div>
+          <div class="field"><label for="res-email">Email</label><input type="email" id="res-email" placeholder="jane@example.com" required></div>
+          <div class="field-row"><div class="field"><label for="res-date">Date</label><input type="date" id="res-date" required></div><div class="field"><label for="res-time">Time</label><input type="time" id="res-time" required></div></div>
+          <div class="field-row"><div class="field"><label for="res-guests">Guests</label><select id="res-guests" required><option value="">Select</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option value="6+">6+</option></select></div><div class="field"><label for="res-occasion">Occasion</label><select id="res-occasion"><option value="">None</option><option>Birthday</option><option>Anniversary</option><option>Date Night</option><option>Business</option><option>Other</option></select></div></div>
+          <div class="field"><label for="res-notes">Special Requests</label><textarea id="res-notes" placeholder="Dietary needs, seating preferences, etc."></textarea></div>
+          <div class="modal-actions"><button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button><button type="submit" class="btn btn-primary">Reserve Now</button></div>
+        </form>
+      </div>
+      <div class="modal-success" id="modalSuccess">
+        <div class="check"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>
+        <h3>You're All Set!</h3><p>We've received your reservation and will send a confirmation to your email shortly. See you soon!</p>
+        <button class="btn btn-primary" id="successClose">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <button class="back-to-top" id="backToTop" aria-label="Back to top"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg></button>
+
+  <script>
+    const topBar=document.getElementById('topBar'),backToTop=document.getElementById('backToTop');
+    window.addEventListener('scroll',()=>{topBar.classList.toggle('scrolled',window.scrollY>40);backToTop.classList.toggle('visible',window.scrollY>500);});
+    backToTop.addEventListener('click',()=>window.scrollTo({top:0,behavior:'smooth'}));
+    const hamburger=document.getElementById('hamburger'),mainNav=document.getElementById('mainNav');
+    hamburger.addEventListener('click',()=>mainNav.classList.toggle('mobile-open'));
+    mainNav.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>mainNav.classList.remove('mobile-open')));
+    const tabs=document.querySelectorAll('.menu-tab'),categories=document.querySelectorAll('.menu-category');
+    tabs.forEach(tab=>{tab.addEventListener('click',()=>{tabs.forEach(t=>t.classList.remove('active'));tab.classList.add('active');categories.forEach(c=>c.classList.remove('active'));document.getElementById('cat-'+tab.dataset.cat).classList.add('active');});});
+    const reveals=document.querySelectorAll('.reveal');
+    const observer=new IntersectionObserver(entries=>{entries.forEach(entry=>{if(entry.isIntersecting){entry.target.classList.add('visible');observer.unobserve(entry.target);}});},{threshold:0.15});
+    reveals.forEach(el=>observer.observe(el));
+    const modal=document.getElementById('reserveModal'),modalForm=document.getElementById('modalForm'),modalSuccess=document.getElementById('modalSuccess'),form=document.getElementById('reservationForm'),cancelBtn=document.getElementById('cancelBtn'),modalClose=document.getElementById('modalClose'),successClose=document.getElementById('successClose');
+    function openModal(){modal.classList.add('active');document.body.style.overflow='hidden';}
+    function closeModal(){modal.classList.remove('active');document.body.style.overflow='';setTimeout(()=>{modalForm.style.display='';modalSuccess.classList.remove('active');},300);}
+    document.querySelectorAll('[data-open-modal]').forEach(el=>{el.addEventListener('click',e=>{e.preventDefault();openModal();});});
+    cancelBtn.addEventListener('click',closeModal);modalClose.addEventListener('click',closeModal);successClose.addEventListener('click',closeModal);
+    modal.addEventListener('click',e=>{if(e.target===modal)closeModal();});
+    document.getElementById('res-date').setAttribute('min',new Date().toISOString().split('T')[0]);
+    form.addEventListener('submit',e=>{e.preventDefault();modalForm.style.display='none';modalSuccess.classList.add('active');form.reset();});
+    document.addEventListener('keydown',e=>{if(e.key==='Escape'&&modal.classList.contains('active'))closeModal();});
+  </script>
+</body>
+</html>
